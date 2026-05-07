@@ -13,7 +13,7 @@ export function SalesComparisonChart({ data, currency = 'PHP' }: { data: Monthly
   const previousTotal = data.reduce((sum, item) => sum + item.previous, 0);
 
   return (
-    <Card>
+    <Card className="overflow-hidden">
       <CardHeader>
         <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
           <div>
@@ -26,21 +26,32 @@ export function SalesComparisonChart({ data, currency = 'PHP' }: { data: Monthly
           </div>
         </div>
       </CardHeader>
-      <CardContent>
-        <div className="overflow-x-auto pb-2">
-          <div className="grid min-w-[640px] grid-cols-12 items-end gap-2 sm:gap-3">
+      <CardContent className="px-0 sm:px-6">
+        {/* Scrollable chart area */}
+        <div className="overflow-x-auto pb-2 px-4 sm:px-0 touch-pan-x">
+          <div className="flex items-end gap-2 sm:gap-3" style={{ minWidth: '600px' }}>
             {data.map((item) => (
-              <div key={item.month} className="flex min-w-0 flex-col items-center gap-2">
+              <div key={item.month} className="flex flex-1 flex-col items-center gap-2">
                 <div className="flex h-52 w-full items-end justify-center gap-1 rounded-2xl bg-[var(--surface)] px-1 py-2 sm:h-56">
-                  <div title={`${item.month} current: ${formatCurrency(item.current, currency)}`} className="w-1/2 rounded-t-md bg-[var(--primary)]" style={{ height: `${Math.max((item.current / max) * 100, item.current > 0 ? 8 : 2)}%` }} />
-                  <div title={`${item.month} previous: ${formatCurrency(item.previous, currency)}`} className="w-1/2 rounded-t-md bg-[linear-gradient(180deg,#5B6CFF_0%,#8B5CF6_100%)]" style={{ height: `${Math.max((item.previous / max) * 100, item.previous > 0 ? 8 : 2)}%` }} />
+                  <div
+                    title={`${item.month} current: ${formatCurrency(item.current, currency)}`}
+                    className="w-1/2 rounded-t-md bg-[var(--primary)] transition-all"
+                    style={{ height: `${Math.max((item.current / max) * 100, item.current > 0 ? 8 : 2)}%` }}
+                  />
+                  <div
+                    title={`${item.month} previous: ${formatCurrency(item.previous, currency)}`}
+                    className="w-1/2 rounded-t-md bg-[linear-gradient(180deg,#5B6CFF_0%,#8B5CF6_100%)] transition-all"
+                    style={{ height: `${Math.max((item.previous / max) * 100, item.previous > 0 ? 8 : 2)}%` }}
+                  />
                 </div>
                 <span className="text-[11px] font-medium text-slate-500">{item.month}</span>
               </div>
             ))}
           </div>
         </div>
-        <div className="mt-5 grid gap-3 sm:grid-cols-3">
+        {/* Scroll hint on mobile */}
+        <p className="mt-1 px-4 text-center text-[11px] text-slate-400 sm:hidden">← Scroll to see all months →</p>
+        <div className="mt-5 grid gap-3 px-4 sm:grid-cols-3 sm:px-0">
           <Metric label="This year" value={formatCurrency(currentTotal, currency)} />
           <Metric label="Last year" value={formatCurrency(previousTotal, currency)} />
           <Metric label="YoY" value={`${previousTotal > 0 ? (((currentTotal - previousTotal) / previousTotal) * 100).toFixed(1) : '0.0'}%`} positive={currentTotal >= previousTotal} />
@@ -63,8 +74,9 @@ export function BestSellingMenuCard({ items }: { items: BestSeller[] }) {
         <CardTitle>Best-Selling Menu</CardTitle>
         <CardDescription>Top sold items for the current year to date</CardDescription>
       </CardHeader>
-      <CardContent className="relative flex min-h-[320px] items-center justify-center overflow-hidden">
-        <div className="flex flex-col items-center justify-center gap-4">
+      <CardContent className="flex flex-col gap-4">
+        {/* Donut chart */}
+        <div className="relative flex items-center justify-center">
           <div className="relative flex h-44 w-44 items-center justify-center rounded-full sm:h-48 sm:w-48" style={{ background: gradient }}>
             {items.map((item, index) => {
               const previousShare = items.slice(0, index).reduce((sum, entry) => sum + entry.quantity, 0) / total;
@@ -75,11 +87,7 @@ export function BestSellingMenuCard({ items }: { items: BestSeller[] }) {
                   type="button"
                   className="absolute inset-0 rounded-full"
                   style={{ clipPath: `polygon(50% 50%, ${polarPoint(previousShare * 360)}, ${polarPoint((previousShare + currentShare) * 360)}, 50% 50%)` }}
-                  onMouseEnter={() => setActiveIndex(index)}
-                  onMouseLeave={() => setActiveIndex(null)}
-                  onFocus={() => setActiveIndex(index)}
-                  onBlur={() => setActiveIndex(null)}
-                  onClick={() => setActiveIndex(index)}
+                  onClick={() => setActiveIndex(activeIndex === index ? null : index)}
                   aria-label={`${item.name}: ${item.quantity} sold, ${item.share.toFixed(1)} percent share`}
                 />
               );
@@ -91,17 +99,37 @@ export function BestSellingMenuCard({ items }: { items: BestSeller[] }) {
               </div>
             </div>
           </div>
-          <p className="text-center text-xs text-slate-500">Hover or tap chart segments to inspect item details</p>
         </div>
 
+        {/* Top 5 list — always visible */}
+        {items.length ? (
+          <div className="space-y-1.5">
+            {items.map((item, index) => (
+              <div
+                key={item.name}
+                className={`flex items-center gap-2.5 rounded-xl px-3 py-2 transition-colors cursor-pointer ${activeIndex === index ? 'bg-slate-100' : 'hover:bg-slate-50'}`}
+                onClick={() => setActiveIndex(activeIndex === index ? null : index)}
+              >
+                <span className="h-2 w-2 shrink-0 rounded-full" style={{ backgroundColor: colors[index % colors.length] }} />
+                <span className="flex-1 truncate text-xs font-medium text-slate-700">{item.name}</span>
+                <span className="text-xs text-slate-400">{item.share.toFixed(1)}%</span>
+                <span className="text-xs font-semibold text-slate-700">{item.quantity}</span>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <p className="text-center text-xs text-slate-400">No sales data yet</p>
+        )}
+
+        {/* Detail popup on click */}
         {activeItem ? (
-          <div className="pointer-events-none absolute bottom-4 left-1/2 w-[min(260px,calc(100%-2rem))] -translate-x-1/2 rounded-2xl border border-[var(--border)] bg-white/95 p-3 shadow-lg backdrop-blur">
+          <div className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-3">
             <div className="flex items-center gap-2">
               <span className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: colors[activeIndex ?? 0] }} />
-              <p className="truncate font-semibold text-[var(--foreground)]">{activeItem.name}</p>
+              <p className="truncate text-sm font-semibold text-[var(--foreground)]">{activeItem.name}</p>
             </div>
-            <div className="mt-2 flex items-center justify-between text-sm text-slate-600"><span>Sold</span><span className="font-semibold text-[var(--foreground)]">{activeItem.quantity}</span></div>
-            <div className="mt-1 flex items-center justify-between text-sm text-slate-600"><span>Share</span><span className="font-semibold text-[var(--foreground)]">{activeItem.share.toFixed(1)}%</span></div>
+            <div className="mt-2 flex items-center justify-between text-xs text-slate-600"><span>Sold</span><span className="font-semibold text-[var(--foreground)]">{activeItem.quantity}</span></div>
+            <div className="mt-1 flex items-center justify-between text-xs text-slate-600"><span>Share</span><span className="font-semibold text-[var(--foreground)]">{activeItem.share.toFixed(1)}%</span></div>
           </div>
         ) : null}
       </CardContent>

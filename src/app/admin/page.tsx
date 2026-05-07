@@ -2,7 +2,7 @@ import { PaymentStatus, UserRole } from '@prisma/client';
 import { AppShell } from '@/components/app-shell';
 import { BestSellingMenuCard, SalesComparisonChart } from '@/components/analytics';
 import { StatCard } from '@/components/stat-card';
-import { Badge, Card, CardContent, CardDescription, CardHeader, CardTitle, DataTable, EmptyState, TD, TH } from '@/components/ui';
+import { Badge, Card, CardContent, CardDescription, CardHeader, CardTitle, EmptyState } from '@/components/ui';
 import { requireUser } from '@/lib/auth';
 import { db } from '@/lib/db';
 import { getAppSettings } from '@/lib/settings';
@@ -73,46 +73,39 @@ export default async function AdminDashboardPage() {
               <CardTitle>Recent Orders</CardTitle>
               <CardDescription>Latest cashier and kitchen activity</CardDescription>
             </CardHeader>
-            <CardContent className="min-h-0 flex-1 overflow-y-auto overflow-x-hidden">
+            <CardContent className="min-h-0 flex-1 overflow-auto p-0">
               {recentOrders.length ? (
-                <>
-                  <div className="space-y-3 md:hidden">
-                    {recentOrders.map((order) => (
-                      <div key={order.id} className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
-                        <div className="flex items-start justify-between gap-3">
-                          <div>
-                            <p className="font-semibold text-slate-900">{order.orderNumber}</p>
-                            <p className="text-sm text-slate-500">{order.orderType === 'DINE_IN' ? `Table ${order.tableNumber ?? '-'}` : order.customerName ?? '-'}</p>
-                          </div>
-                          <Badge variant={order.status === 'COMPLETED' ? 'success' : order.status === 'READY' ? 'warning' : 'secondary'}>{order.status}</Badge>
-                        </div>
-                        <div className="mt-3 flex items-center justify-between text-sm"><span className="text-slate-500">Payment</span><Badge variant={order.paymentStatus === 'PAID' ? 'success' : 'outline'}>{order.paymentStatus}</Badge></div>
-                        <div className="mt-2 flex items-center justify-between text-sm"><span className="text-slate-500">Total</span><span className="font-semibold">{formatCurrency(Number(order.total), settings.currency)}</span></div>
-                        <div className="mt-2 text-xs text-slate-500">{formatDateTime(order.createdAt)}</div>
-                      </div>
-                    ))}
-                  </div>
-                  <div className="hidden md:block">
-                    <DataTable>
-                      <thead className="sticky top-0 bg-white">
-                        <tr><TH>Order</TH><TH>Reference</TH><TH>Status</TH><TH>Payment</TH><TH>Total</TH><TH>Created</TH></tr>
-                      </thead>
-                      <tbody>
-                        {recentOrders.map((order) => (
-                          <tr key={order.id} className="border-t border-slate-100">
-                            <TD className="font-semibold">{order.orderNumber}</TD>
-                            <TD>{order.orderType === 'DINE_IN' ? `Table ${order.tableNumber ?? '-'}` : order.customerName ?? '-'}</TD>
-                            <TD><Badge variant={order.status === 'COMPLETED' ? 'success' : order.status === 'READY' ? 'warning' : 'secondary'}>{order.status}</Badge></TD>
-                            <TD><Badge variant={order.paymentStatus === 'PAID' ? 'success' : 'outline'}>{order.paymentStatus}</Badge></TD>
-                            <TD>{formatCurrency(Number(order.total), settings.currency)}</TD>
-                            <TD className="text-slate-500">{formatDateTime(order.createdAt)}</TD>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </DataTable>
-                  </div>
-                </>
-              ) : <EmptyState title="No recent orders" description="Orders will appear here once the store starts taking transactions." />}
+                <div className="overflow-x-auto">
+                  <table className="w-full min-w-[520px] text-sm">
+                    <thead className="sticky top-0 z-10 bg-white">
+                      <tr className="border-b border-slate-100">
+                        <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-400">Order</th>
+                        <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-400">Reference</th>
+                        <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-400">Status</th>
+                        <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-400">Payment</th>
+                        <th className="px-4 py-3 text-right text-xs font-semibold uppercase tracking-wide text-slate-400">Total</th>
+                        <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-400">Created</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {recentOrders.map((order) => (
+                        <tr key={order.id} className="border-b border-slate-50 transition-colors hover:bg-slate-50">
+                          <td className="px-4 py-3 font-semibold text-slate-900">{order.orderNumber}</td>
+                          <td className="px-4 py-3 text-slate-500">{order.orderType === 'DINE_IN' ? `Table ${order.tableNumber ?? '-'}` : order.customerName ?? '-'}</td>
+                          <td className="px-4 py-3"><Badge variant={order.status === 'COMPLETED' ? 'success' : order.status === 'READY' ? 'warning' : 'secondary'}>{order.status}</Badge></td>
+                          <td className="px-4 py-3"><Badge variant={order.paymentStatus === 'PAID' ? 'success' : 'outline'}>{order.paymentStatus}</Badge></td>
+                          <td className="px-4 py-3 text-right font-semibold text-slate-900">{formatCurrency(Number(order.total), settings.currency)}</td>
+                          <td className="px-4 py-3 text-slate-400">{formatDateTime(order.createdAt)}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              ) : (
+                <div className="p-6">
+                  <EmptyState title="No recent orders" description="Orders will appear here once the store starts taking transactions." />
+                </div>
+              )}
             </CardContent>
           </Card>
 
@@ -125,7 +118,7 @@ export default async function AdminDashboardPage() {
               <div className="rounded-2xl bg-slate-50 p-4"><div className="flex items-center justify-between"><span className="text-sm text-slate-500">Dine-in</span><span className="text-lg font-semibold">{ordersToday.filter((order) => order.orderType === 'DINE_IN').length}</span></div></div>
               <div className="rounded-2xl bg-slate-50 p-4"><div className="flex items-center justify-between"><span className="text-sm text-slate-500">Takeout</span><span className="text-lg font-semibold">{ordersToday.filter((order) => order.orderType === 'TAKEOUT').length}</span></div></div>
               <div className="rounded-2xl bg-slate-50 p-4"><div className="flex items-center justify-between"><span className="text-sm text-slate-500">Paid Orders</span><span className="text-lg font-semibold">{paidOrdersToday.length}</span></div></div>
-              <div className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-4 text-sm text-slate-700">This dashboard now uses actual POS data shaping: paid order totals for the year comparison and paid item quantities for year-to-date best sellers.</div>
+              <div className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-4 text-sm text-slate-700">This dashboard uses actual POS data: paid order totals for the year comparison and paid item quantities for year-to-date best sellers.</div>
             </CardContent>
           </Card>
         </div>
