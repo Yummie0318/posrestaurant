@@ -1,0 +1,100 @@
+@import "tailwindcss";
+
+:root {
+  --background: #F8F8F9;
+  --foreground: #111439;
+  --card: #ffffff;
+  --muted: #6b7280;
+  --primary: #111439;
+  --primary-strong: #0d1030;
+  --primary-foreground: #ffffff;
+  --accent: #6f7bf7;
+  --accent-2: #8b5cf6;
+  --surface: #f2f4ff;
+  --surface-strong: #e9edff;
+  --border: #e6e8f0;
+  --ring: rgba(111, 123, 247, 0.28);
+  --danger: #dc2626;
+  --danger-surface: #fef2f2;
+  --success: #1f8a70;
+  --success-surface: #ecfdf5;
+  --warning: #b7791f;
+  --warning-surface: #fff8e8;
+  --hero-gradient: linear-gradient(135deg, #111439 0%, #3340b3 48%, #7c3aed 100%);
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  margin: 0;
+  background:
+    radial-gradient(circle at top left, rgba(111, 123, 247, 0.08), transparent 26%),
+    radial-gradient(circle at top right, rgba(139, 92, 246, 0.08), transparent 22%),
+    var(--background);
+  color: var(--foreground);
+}
+
+button,
+input,
+select,
+textarea {
+  font: inherit;
+}
+
+input,
+select,
+textarea {
+  transition: border-color 160ms ease, box-shadow 160ms ease, background-color 160ms ease;
+}
+
+input:focus,
+select:focus,
+textarea:focus {
+  outline: none;
+  border-color: rgba(111, 123, 247, 0.45);
+  box-shadow: 0 0 0 4px rgba(111, 123, 247, 0.12);
+}
+
+button {
+  transition: transform 140ms ease, box-shadow 180ms ease, background-color 180ms ease, border-color 180ms ease;
+}
+
+button:active {
+  transform: translateY(1px) scale(0.995);
+}
+
+::selection {
+  background: rgba(111, 123, 247, 0.22);
+}
+
+@keyframes oc-fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes oc-panel-in {
+  from { opacity: 0; transform: translateY(10px) scale(0.985); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+.oc-overlay {
+  animation: oc-fade-in 140ms ease-out;
+}
+
+.oc-panel {
+  animation: oc-panel-in 180ms ease-out;
+  transform-origin: center;
+}

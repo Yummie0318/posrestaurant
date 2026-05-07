@@ -1,0 +1,13 @@
+<svg width="800" height="600" viewBox="0 0 800 600" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect width="800" height="600" rx="40" fill="#FFF7ED"/>
+  <circle cx="400" cy="300" r="190" fill="#FDBA74"/>
+  <circle cx="400" cy="300" r="155" fill="#FB923C"/>
+  <path d="M280 285C330 235 470 235 520 285" stroke="#7C2D12" stroke-width="16" stroke-linecap="round"/>
+  <path d="M270 320C330 270 470 270 530 320" stroke="#7C2D12" stroke-width="16" stroke-linecap="round"/>
+  <path d="M285 355C345 305 455 305 515 355" stroke="#7C2D12" stroke-width="16" stroke-linecap="round"/>
+  <circle cx="340" cy="235" r="18" fill="#65A30D"/>
+  <circle cx="460" cy="230" r="18" fill="#65A30D"/>
+  <circle cx="508" cy="276" r="16" fill="#DC2626"/>
+  <circle cx="300" cy="348" r="16" fill="#DC2626"/>
+  <text x="50%" y="535" text-anchor="middle" fill="#7C2D12" font-family="Arial, sans-serif" font-size="42" font-weight="700">Pancit Canton Solo</text>
+</svg>
