@@ -98,9 +98,23 @@ export function AppShell({
     <div className={cn('h-dvh overflow-hidden bg-[var(--background)] text-[var(--foreground)]')}>
       <div className={cn('mx-auto grid h-full gap-4 p-3 lg:p-4', showSidebar ? 'max-w-[1600px] lg:grid-cols-[260px_minmax(0,1fr)]' : 'max-w-[1700px]')}>
         {showSidebar ? <aside className="hidden h-full overflow-hidden lg:block">{sidebar}</aside> : null}
-        {showSidebar && mobileOpen ? (
-          <div className="fixed inset-0 z-50 bg-[rgba(17,20,57,0.22)] p-3 backdrop-blur-sm lg:hidden" onClick={() => setMobileOpen(false)}>
-            <div className="h-full w-[300px]" onClick={(e) => e.stopPropagation()}>{sidebar}</div>
+        {showSidebar ? (
+          <div
+            className={cn(
+              'fixed inset-0 z-50 p-3 lg:hidden transition-all duration-300 ease-in-out',
+              mobileOpen ? 'visible bg-[rgba(17,20,57,0.22)] backdrop-blur-sm' : 'invisible bg-transparent backdrop-blur-none pointer-events-none',
+            )}
+            onClick={() => setMobileOpen(false)}
+          >
+            <div
+              className={cn(
+                'h-full w-[300px] transition-transform duration-300 ease-in-out',
+                mobileOpen ? 'translate-x-0' : '-translate-x-full',
+              )}
+              onClick={(e) => e.stopPropagation()}
+            >
+              {sidebar}
+            </div>
           </div>
         ) : null}
 

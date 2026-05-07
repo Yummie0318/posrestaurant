@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { ArrowLeft, CheckCircle2, ClipboardList, CreditCard, Pencil, ReceiptText, Search, Sparkles, Trash2, X } from 'lucide-react';
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import type { AppSettings } from '@/lib/settings';
 import { ProductImage } from '@/components/product-image';
@@ -13,6 +13,29 @@ type ProductCategory = { id: string; name: string; slug: string; description: st
 type ProductWithCategory = { id: string; categoryId: string; name: string; slug: string; description: string | null; price: number; available: boolean; active: boolean; imageUrl: string | null; category: ProductCategory };
 type CartItem = { productId: string; name: string; price: number; quantity: number; notes: string; imageUrl: string | null };
 type ReceiptSummary = { orderId: string; orderNumber: string; subtotal: number; tax: number; taxRate: number; total: number; changeAmount: number; paymentStatus: string; status: string; receiptUrl: string };
+
+// ─── Animation hook ──────────────────────────────────────────────────────────
+// Delays unmounting so the exit animation can finish before the element is removed.
+function useAnimatedOpen(open: boolean, duration = 300) {
+  const [rendered, setRendered] = useState(open);
+  const [visible, setVisible] = useState(open);
+
+  useEffect(() => {
+    if (open) {
+      setRendered(true);
+      // One frame delay so the browser paints the hidden state first,
+      // then we flip visible → the transition fires.
+      const raf = requestAnimationFrame(() => setVisible(true));
+      return () => cancelAnimationFrame(raf);
+    } else {
+      setVisible(false);
+      const timer = setTimeout(() => setRendered(false), duration);
+      return () => clearTimeout(timer);
+    }
+  }, [open, duration]);
+
+  return { rendered, visible };
+}
 
 export function CashierPos({ products, settings }: { products: ProductWithCategory[]; settings: AppSettings }) {
   const router = useRouter();
@@ -75,6 +98,7 @@ export function CashierPos({ products, settings }: { products: ProductWithCatego
         <DesktopOrderPanel cart={cart} total={total} totalItems={totalItems} settings={settings} setCheckoutOpen={setCheckoutOpen} updateCart={updateCart} clearOrderDraft={clearOrderDraft} />
       </div>
 
+      {/* ── Mobile FAB ── */}
       <div className="fixed inset-x-3 bottom-3 z-40 lg:hidden">
         <Button className="h-auto w-full justify-between rounded-[1.2rem] px-4 py-3 shadow-[0_16px_40px_rgba(15,23,42,0.28)]" onClick={() => { setMobileOrderOpen(true); setCheckoutOpen(false); }}>
           <div className="text-left"><p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-slate-300">Open Orders</p><p className="mt-1 text-sm font-semibold">{totalItems} item{totalItems === 1 ? '' : 's'} • {formatCurrency(total, settings.currency)}</p></div>
@@ -82,27 +106,88 @@ export function CashierPos({ products, settings }: { products: ProductWithCatego
         </Button>
       </div>
 
-      <Sheet open={mobileOrderOpen}>
-        <div className="flex h-full" onClick={() => setMobileOrderOpen(false)}>
-          <div className="mt-auto w-full" onClick={(e) => e.stopPropagation()}>
-            <div className="flex h-[min(84dvh,84vh)] w-full flex-col overflow-hidden rounded-t-[1.5rem] border border-slate-200 bg-white shadow-2xl">
-              <PanelHeader eyebrow="Step 1" title="Current Order" onClose={() => setMobileOrderOpen(false)} />
-              <div className="min-h-0 flex-1 overflow-y-auto px-4 py-4"><CartItems cart={cart} updateCart={updateCart} settings={settings} compact={false} /></div>
-              <div className="border-t border-slate-200 px-4 py-3"><OrderSummaryBar total={total} totalItems={totalItems} settings={settings} compact={false} /><div className="mt-3 grid grid-cols-2 gap-2"><Button variant="outline" onClick={clearOrderDraft}><Trash2 className="h-4 w-4" />Clear</Button><Button disabled={cart.length === 0} onClick={() => { setMobileOrderOpen(false); setCheckoutOpen(true); }}><ReceiptText className="h-4 w-4" />Checkout</Button></div></div>
-            </div>
+      {/* ── Mobile Order Sheet — slides up from bottom ── */}
+      <AnimatedSheet open={mobileOrderOpen} onClose={() => setMobileOrderOpen(false)}>
+        <PanelHeader eyebrow="Step 1" title="Current Order" onClose={() => setMobileOrderOpen(false)} />
+        <div className="min-h-0 flex-1 overflow-y-auto px-4 py-4"><CartItems cart={cart} updateCart={updateCart} settings={settings} compact={false} /></div>
+        <div className="border-t border-slate-200 px-4 py-3">
+          <OrderSummaryBar total={total} totalItems={totalItems} settings={settings} compact={false} />
+          <div className="mt-3 grid grid-cols-2 gap-2">
+            <Button variant="outline" onClick={clearOrderDraft}><Trash2 className="h-4 w-4" />Clear</Button>
+            <Button disabled={cart.length === 0} onClick={() => { setMobileOrderOpen(false); setTimeout(() => setCheckoutOpen(true), 200); }}><ReceiptText className="h-4 w-4" />Checkout</Button>
           </div>
         </div>
-      </Sheet>
+      </AnimatedSheet>
 
-      <Dialog open={checkoutOpen}>
-        <DialogPanel className="max-w-xl overflow-hidden rounded-[1.5rem]">
-          <PanelHeader eyebrow={mobileOrderOpen ? 'Step 2' : 'Checkout'} title="Checkout Details" subtitle="Payment, totals, and order info." onClose={() => setCheckoutOpen(false)} onBack={() => { if (window.innerWidth < 1024) { setCheckoutOpen(false); setMobileOrderOpen(true); } }} />
-          <CardContent className="max-h-[72dvh] overflow-y-auto p-4 sm:p-5"><CheckoutForm orderType={orderType} setOrderType={setOrderType} tableNumber={tableNumber} setTableNumber={setTableNumber} customerName={customerName} setCustomerName={setCustomerName} orderNotes={orderNotes} setOrderNotes={setOrderNotes} subtotal={subtotal} tax={tax} total={total} receivedAmount={receivedAmount} setReceivedAmount={setReceivedAmount} change={change} error={error} clearOrderDraft={clearOrderDraft} submitOrder={submitOrder} submitting={submitting} canSubmit={cart.length > 0 && received >= total} settings={settings} /></CardContent>
-        </DialogPanel>
-      </Dialog>
+      {/* ── Checkout Dialog — scales + fades in ── */}
+      <AnimatedDialog open={checkoutOpen} onClose={() => setCheckoutOpen(false)}>
+        <PanelHeader eyebrow={mobileOrderOpen ? 'Step 2' : 'Checkout'} title="Checkout Details" subtitle="Payment, totals, and order info." onClose={() => setCheckoutOpen(false)} onBack={() => { if (window.innerWidth < 1024) { setCheckoutOpen(false); setMobileOrderOpen(true); } }} />
+        <CardContent className="max-h-[72dvh] overflow-y-auto p-4 sm:p-5">
+          <CheckoutForm orderType={orderType} setOrderType={setOrderType} tableNumber={tableNumber} setTableNumber={setTableNumber} customerName={customerName} setCustomerName={setCustomerName} orderNotes={orderNotes} setOrderNotes={setOrderNotes} subtotal={subtotal} tax={tax} total={total} receivedAmount={receivedAmount} setReceivedAmount={setReceivedAmount} change={change} error={error} clearOrderDraft={clearOrderDraft} submitOrder={submitOrder} submitting={submitting} canSubmit={cart.length > 0 && received >= total} settings={settings} />
+        </CardContent>
+      </AnimatedDialog>
 
       {receipt ? <ReceiptDialog receipt={receipt} settings={settings} close={() => setReceipt(null)} /> : null}
     </>
+  );
+}
+
+// ─── AnimatedSheet ────────────────────────────────────────────────────────────
+// Replaces <Sheet> with a custom overlay that slides in from the bottom.
+function AnimatedSheet({ open, onClose, children }: { open: boolean; onClose: () => void; children: React.ReactNode }) {
+  const { rendered, visible } = useAnimatedOpen(open, 350);
+  if (!rendered) return null;
+
+  return (
+    <div className="fixed inset-0 z-50 lg:hidden">
+      {/* Backdrop — fades in/out */}
+      <div
+        className="absolute inset-0 bg-black/40 transition-opacity duration-300"
+        style={{ opacity: visible ? 1 : 0 }}
+        onClick={onClose}
+      />
+      {/* Panel — slides up from bottom */}
+      <div className="absolute inset-x-0 bottom-0 flex flex-col">
+        <div
+          className="mt-auto w-full transition-transform duration-350 ease-out"
+          style={{ transform: visible ? 'translateY(0)' : 'translateY(100%)' }}
+          onClick={(e) => e.stopPropagation()}
+        >
+          <div className="flex h-[min(84dvh,84vh)] w-full flex-col overflow-hidden rounded-t-[1.5rem] border border-slate-200 bg-white shadow-2xl">
+            {children}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── AnimatedDialog ───────────────────────────────────────────────────────────
+// Replaces <Dialog> with a custom centered modal that scales + fades in.
+function AnimatedDialog({ open, onClose, children }: { open: boolean; onClose: () => void; children: React.ReactNode }) {
+  const { rendered, visible } = useAnimatedOpen(open, 300);
+  if (!rendered) return null;
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+      {/* Backdrop */}
+      <div
+        className="absolute inset-0 bg-black/50 transition-opacity duration-300"
+        style={{ opacity: visible ? 1 : 0 }}
+        onClick={onClose}
+      />
+      {/* Panel — scale + fade */}
+      <div
+        className="relative w-full max-w-xl overflow-hidden rounded-[1.5rem] bg-white shadow-2xl transition-all duration-300"
+        style={{
+          opacity: visible ? 1 : 0,
+          transform: visible ? 'scale(1) translateY(0)' : 'scale(0.95) translateY(12px)',
+        }}
+        onClick={(e) => e.stopPropagation()}
+      >
+        {children}
+      </div>
+    </div>
   );
 }
 

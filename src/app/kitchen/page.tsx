@@ -28,7 +28,7 @@ export default async function KitchenPage() {
   return (
     <AppShell pathname="/kitchen" user={user} title="Kitchen Board" subtitle="Real-time preparation queue with clearer ticket priority and actions." hideSidebar={user.role === UserRole.KITCHEN} headerLogout={user.role === UserRole.KITCHEN}>
       <div className="flex h-full min-h-0 flex-col gap-4 overflow-hidden">
-        <Card className="shrink-0">
+        {/* <Card className="shrink-0">
           <CardContent className="flex flex-wrap items-center justify-between gap-3 p-3">
             <p className="text-sm text-slate-500">Auto-refresh runs every 15 seconds to keep tickets current.</p>
             <div className="flex flex-wrap gap-2">
@@ -36,7 +36,7 @@ export default async function KitchenPage() {
               <Badge variant="warning">{kitchenOrders.filter((o) => o.status === 'READY').length} ready</Badge>
             </div>
           </CardContent>
-        </Card>
+        </Card> */}
         <div className="min-h-0 flex-1 overflow-hidden"><KitchenBoard orders={kitchenOrders} /></div>
       </div>
     </AppShell>
